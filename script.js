@@ -52,10 +52,25 @@ class GoogleTranslator {
     this.speakerButton = $('#speakerButton')
 
     this.charCount = $('#charCount')
+    this.clearButton = $('#clearButton')
 
     //Configuración incial
     this.targetLanguage.value = GoogleTranslator.DEFAULT_TARGET_LANGUAGE
     // this.sourceLanguage.value = GoogleTranslator.DEFAULT_SOURCE_LANGUAGE
+
+    //Guardar en localStorage los idiomas seleccionados
+    const savedSourceLanguage = localStorage.getItem('agoe-sourceLanguage')
+    const savedTargetLanguage = localStorage.getItem('agoe-targetLanguage')
+    if (savedSourceLanguage) {
+      this.sourceLanguage.value = savedSourceLanguage
+    } else {
+      this.sourceLanguage.value = GoogleTranslator.DEFAULT_SOURCE_LANGUAGE
+    }
+    if (savedTargetLanguage) {
+      this.targetLanguage.value = savedTargetLanguage
+    } else {
+      this.targetLanguage.value = GoogleTranslator.DEFAULT_TARGET_LANGUAGE
+    }
 
     //Verificar que el usuario tiene soporte para la API de traducción
     this.checkAPISupport()
@@ -80,17 +95,45 @@ class GoogleTranslator {
       //Actualizar el contador de letras
       this.updateCharCount()
 
+      //Mostrar el botón de limpiar si hay texto
+      this.showClearButton()
+
       //Traducir el texto con un debounce para evitar múltiples
       this.debounceTranslate()
     })
-    this.sourceLanguage.addEventListener('change', () => this.translate())
-    this.targetLanguage.addEventListener('change', () => this.translate())
+    this.sourceLanguage.addEventListener('change', () => {
+      //guardar en localStorage el idioma de origen seleccionado
+      localStorage.setItem('agoe-sourceLanguage', this.sourceLanguage.value)
+      this.translate()
+    })
+    this.targetLanguage.addEventListener('change', () => {
+      //guardar en localStorage el idioma de destino seleccionado
+      localStorage.setItem('agoe-targetLanguage', this.targetLanguage.value)
+      this.translate()
+    })
 
     this.swapButton.addEventListener('click', () => this.swapLanguages())
 
     this.micButton.addEventListener('click', () => this.startVoiceRecognition())
     this.speakerButton.addEventListener('click', () => this.speakTranslation())
     this.copyButton.addEventListener('click', () => this.copyTranslation())
+    this.clearButton.addEventListener('click', () => this.clearInput())
+  }
+
+  showClearButton() {
+    // console.log('Mostrando el botón de limpiar')
+    if (this.inputText.value.trim() !== '') {
+      this.clearButton.style.display = 'inline-block'
+    }
+  }
+
+  clearInput() {
+    // console.log('Limpiando el texto de entrada y salida')
+    this.inputText.value = ''
+    this.outputText.textContent = ''
+    this.charCount.textContent = '0'
+    this.charCount.style.color = 'var(--text-secondary)'
+    this.clearButton.style.display = 'none'
   }
 
   updateCharCount() {
@@ -242,6 +285,7 @@ class GoogleTranslator {
     this.outputText.textContent = ''
 
     this.updateCharCount()
+    this.showClearButton()
 
     //Actualizar la traducción después de intercambiar los idiomas
     if (this.inputText.value.trim()) {
@@ -293,6 +337,7 @@ class GoogleTranslator {
       const [{ transcript }] = event.results[0]
       this.inputText.value = transcript
       this.updateCharCount()
+      this.showClearButton()
       this.translate()
     }
 
